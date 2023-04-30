@@ -1,39 +1,33 @@
-python
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import requests
 from bs4 import BeautifulSoup
+import telebot
 
-TOKEN = '6218817632:AAHzYGdaMaDD3VuFfgA213pB4qxPEDsgVAw'
-bot = telebot.TeleBot(TOKEN)
-# URL для получения погоды для Москвы на сайте gismeteo.ru
-URL = 'https://www.gismeteo.ru/weather-moscow-4368/'
+# Создание бота и указание токена
+bot = telebot.TeleBot('6218817632:AAHzYGdaMaDD3VuFfgA213pB4qxPEDsgVAw')
 
 # Функция для получения погоды с сайта gismeteo.ru
-def get_weather():
-    response = requests.get(URL)
+def get_weather(city):
+    url = f'https://www.gismeteo.ru/weather-{city.lower()}-4248/'
+    response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
-    # Здесь можно выбрать нужные данные о погоде из HTML страницы
-    temperature = soup.find('div', class_='js_value tab-weather__value_l').text
+    temperature = soup.find('span', class_='js_value tab-weather__value_l').text
     condition = soup.find('div', class_='tab-weather__desc').text
-    return f'Температура: {temperature}\nСостояние: {condition}'
+    return f'Температура в {city.capitalize()}: {temperature}\nСостояние: {condition}'
 
 # Обработчик команды /start
-def start(update, context):
-    update.message.reply_text('Привет! Я могу показать тебе погоду. Просто отправь мне команду /weather.')
+@bot.message_handler(commands=['start'])
+def start_message(message):
+    bot.send_message(message.chat.id, 'Привет! Я могу показать тебе погоду. Просто отправь мне название города.')
 
-# Обработчик команды /weather
-def weather(update, context):
-    weather = get_weather()
-    update.message.reply_text(weather)
+# Обработчик сообщений с названием города
+@bot.message_handler(content_types=['text'])
+def send_weather(message):
+    city = message.text
+    try:
+        weather = get_weather(city)
+        bot.send_message(message.chat.id, weather)
+    except:
+        bot.send_message(message.chat.id, 'К сожалению, я не могу получить погоду для этого города.')
 
-# Функция для запуска бота
-def main():
-    updater = Updater('your_bot_token', use_context=True)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("weather", weather))
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == '__main__':
-    main()
+# Запуск бота
+bot.polling()
