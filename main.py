@@ -1,9 +1,11 @@
+python
 import requests
 from bs4 import BeautifulSoup
 import telebot
+import os
 
 # Создание бота и указание токена
-bot = telebot.TeleBot('6218817632:AAHzYGdaMaDD3VuFfgA213pB4qxPEDsgVAw')
+bot = telebot.TeleBot(os.environ['TELEGRAM_TOKEN'])
 
 # Функция для получения погоды с сайта gismeteo.ru
 def get_weather(city):
